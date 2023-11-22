@@ -3,7 +3,7 @@
 
 #include "../include/jaclx.h"
 
-static FILE* sourceFile;
+FILE* sourceFile;
 static Token currentToken;
 
 void initializeLexer(FILE* file)

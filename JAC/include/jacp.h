@@ -13,7 +13,6 @@ typedef struct AstNode
 
 AstNode* createAstNode(TokenType type, const char* lexeme);
 void deleteAstNode(AstNode* node);
-
 AstNode* parseInt();
 AstNode* parseFactor();
 AstNode* parseTerm();
@@ -22,5 +21,7 @@ AstNode* parseAssignment();
 AstNode* parseStatement();
 AstNode* parseBlock();
 AstNode* parse();
+void displayAST(AstNode* node, int depth);
+void deleteAST(AstNode* root);
 
 #endif // JACP_H

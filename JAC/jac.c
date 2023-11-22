@@ -5,9 +5,11 @@
 
 // Local
 #include "include/jaclx.h"
+#include "include/jacp.h"
 
 // Test functions
 void testLexer(FILE* file);
+void testParser(FILE* file);
 
 int main(int argc, char* argv[])
 {   
@@ -26,7 +28,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    testLexer(file);
+    testParser(file);
 
     fclose(file);    
     return EXIT_SUCCESS;
@@ -46,4 +48,25 @@ void testLexer(FILE* file)
     cleanupLexer();
     fclose(file);
 
+}
+
+void testParser(FILE* file)
+{
+    initializeLexer(file);
+
+    AstNode* syntaxTree = parse();
+
+    if (syntaxTree != NULL)
+    {
+        printf("\nParser: Syntax Tree Structure:\n");
+        displayAST(syntaxTree, 0);
+
+        deleteAST(syntaxTree);
+    }
+    else
+    {
+        fprintf(stderr, "Parser: Parsing failed\n");
+    }
+
+    cleanupLexer();
 }
