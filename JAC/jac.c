@@ -4,17 +4,16 @@
 #include <stdlib.h>
 
 // Local
-#include "include/util.h"
-#include "include/jacio.h"
+#include "include/jaclx.h"
 
-
-
+// Test functions
+void testLexer(FILE* file);
 
 int main(int argc, char* argv[])
-{
+{   
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: %s <filePath>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <fsourceFile>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -26,11 +25,25 @@ int main(int argc, char* argv[])
         fprintf(stderr, "Error opening file: %s\n", filePath);
         return EXIT_FAILURE;
     }
-    
-    while (!feof(file))
-    {
-        printf("%d", getToken(file).type);
-    }
 
+    testLexer(file);
+
+    fclose(file);    
     return EXIT_SUCCESS;
+}
+
+void testLexer(FILE* file)
+{
+    initializeLexer(file);
+
+    Token token;
+    do 
+    {
+        token = getNextToken();
+        printf("Token: Type=%d, lexeme='%s\n", token.type, token.lexeme);
+    } while (token.type != TOKEN_EOF);
+
+    cleanupLexer();
+    fclose(file);
+
 }
