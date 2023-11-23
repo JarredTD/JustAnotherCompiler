@@ -79,49 +79,131 @@ Token getNextToken(FILE* file)
         }
     }
     else if (ispunct(c)) {
-        if (c == '!') {
-            int nextChar = fgetc(file);
-            if (nextChar == '=') {
-                token.type = TOKEN_NOT_EQUAL;
-                strcpy(token.lexeme, "!=");
-            } else {
-                ungetc(nextChar, file); // Put back the character
-                token.type = TOKEN_PUNCTUATION;
-                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
-            }
-        } else {
-            token.type = TOKEN_PUNCTUATION;
-            snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
-        }
-    }
-    else // Character
-    {
+        bool fallThrough = false;
         switch (c)
         {
-            case '+':
-                token.type = TOKEN_PLUS;
-                break;
-            case '-':
-                token.type = TOKEN_MINUS;
-                break;
-            case '*':
-                token.type = TOKEN_STAR;
-                break;
-            case '/':
-                token.type = TOKEN_SLASH;
-                break;
             case '=':
                 token.type = TOKEN_ASSIGN;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
                 break;
             case ';':
                 token.type = TOKEN_SEMICOLON;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
                 break;
             case '(':
                 token.type = TOKEN_LPAREN;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
                 break;
             case ')':
                 token.type = TOKEN_RPAREN;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
                 break;
+            case '{':
+                token.type = TOKEN_LBRACE;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '}':
+                token.type = TOKEN_RBRACE;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '+':
+                token.type = TOKEN_PLUS;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '-':
+                token.type = TOKEN_MINUS;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '*':
+                token.type = TOKEN_STAR;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '/':
+                token.type = TOKEN_SLASH;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '>':
+                token.type = TOKEN_LTHAN;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            case '<':
+                token.type = TOKEN_GTHAN;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                break;
+            default:
+                fallThrough = true;
+                break;
+        }
+        if (fallThrough)
+        {
+            if (c == '!') { // Not equal check
+                int nextChar = fgetc(file);
+                if (nextChar == '=') {
+                    token.type = TOKEN_NOT_EQUAL;
+                    strcpy(token.lexeme, "!=");
+                } else {
+                    ungetc(nextChar, file); // Put back the character
+                    token.type = TOKEN_PUNCTUATION;
+                    snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                }
+            }
+            else if (c == '\'') // Char check
+            {
+                int charLit = fgetc(file);
+                if (isalnum(charLit))
+                {
+                    int nextChar = fgetc(file);
+                    if (nextChar != '\'')
+                    {
+                        token.type = TOKEN_ERROR;
+                        snprintf(token.lexeme, sizeof(token.lexeme), "%c", charLit);
+                        
+                    }
+                    else
+                    {
+                        token.type = TOKEN_CHAR;
+                        snprintf(token.lexeme, sizeof(token.lexeme), "%c", charLit);
+                    }
+                }
+                else
+                {
+                    ungetc(charLit, file);
+                    token.type = TOKEN_PUNCTUATION;
+                    snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+                }
+            }
+            else if (c == '\"') // String check
+            {
+            char str[256];
+            int length = 0;
+
+            int nextChar = fgetc(file);
+
+            while (nextChar != '\"' && nextChar != EOF)
+            {
+                if (length + 1 == 256) {
+                    fprintf(stderr, "String exceeds maximum allowed length\n");
+                    exit(EXIT_FAILURE);
+                }
+                str[length++] = nextChar;
+                nextChar = fgetc(file);
+            }
+
+            token.type = TOKEN_STRING;
+            str[length] = '\0';
+            strncpy(token.lexeme, str, sizeof(token.lexeme) - 1);
+            token.lexeme[sizeof(token.lexeme) - 1] = '\0';
+            }
+            else {
+                token.type = TOKEN_PUNCTUATION;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+            }
+        }
+    }
+    else // Unknown Catch
+    {
+        switch (c)
+        {
             default:
                 token.type = TOKEN_EOF;
                 strcpy(token.lexeme, "Unknown");

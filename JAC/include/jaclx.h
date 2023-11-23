@@ -38,19 +38,24 @@ typedef enum
     TOKEN_GTHAN,
     TOKEN_NOT_EQUAL,
 
-    //
+    // Punctuation
     TOKEN_PUNCTUATION,
 
-    // 
+    // End of file
     TOKEN_EOF,
 
-    // 
+    // AST Node Types
     TOKEN_FOR,
     TOKEN_WHILE,
     TOKEN_IF,
     TOKEN_ELSE,
     TOKEN_RETURN,
-    TOKEN_UNKNOWN
+    
+    // Unknown Token
+    TOKEN_UNKNOWN,
+
+    // Error
+    TOKEN_ERROR
 } TokenType;
 
 /**

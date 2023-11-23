@@ -38,6 +38,7 @@ void tester(FILE* file)
 
     if (tokenList == NULL)
     {
+        fprintf(stderr, "Error: Token List is null\n");
         return;
     }
 
