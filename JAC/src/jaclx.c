@@ -2,21 +2,13 @@
 #include <string.h> 
 
 #include "../include/jaclx.h"
+#include <stdlib.h>
 
-FILE* sourceFile;
-static Token currentToken;
-
-void initializeLexer(FILE* file)
-{
-    sourceFile = file;
-    skipWhiteSpaceAndComments(); // Ignore initial whitespace or comments
-}
-
-static void skipWhiteSpaceAndComments()
+static void skipWhiteSpaceAndComments(FILE* file)
 {
     int c;
 
-    while ((c = fgetc(sourceFile)) != EOF)
+    while ((c = fgetc(file)) != EOF)
     {
         if (isspace(c))
         {
@@ -24,15 +16,15 @@ static void skipWhiteSpaceAndComments()
         }
         else if (c == '/')
         {
-            if ((c = fgetc(sourceFile)) == '/') // Checking for '//' start to comment
+            if ((c = fgetc(file)) == '/') // Checking for '//' start to comment
             {
-                while ((c = fgetc(sourceFile)) != EOF && c != '\n'); // Ignore comment
+                while ((c = fgetc(file)) != EOF && c != '\n'); // Ignore comment
             }
             else if (c == '*') // Block comment
             {
-                while ((c = fgetc(sourceFile)) != EOF)
+                while ((c = fgetc(file)) != EOF)
                 {
-                    if (c == '*' && (c = fgetc(sourceFile)) == '/')
+                    if (c == '*' && (c = fgetc(file)) == '/')
                     {
                         break;
                     }
@@ -40,101 +32,170 @@ static void skipWhiteSpaceAndComments()
             }
             else // Not a comment
             {
-                ungetc(c, sourceFile);
+                ungetc(c, file);
                 break;
             }
         }
         else // Not a whitespace or comment
         {
-          ungetc(c, sourceFile);
+          ungetc(c, file);
           break;  
         }
     }
 }
 
-Token getNextToken()
+
+Token getNextToken(FILE* file)
 {
-    skipWhiteSpaceAndComments();
-    int c = fgetc(sourceFile);
+    skipWhiteSpaceAndComments(file);
+
+    int c = fgetc(file);
+
+    Token token;
 
     if (c == EOF) // End of file
     {
-        currentToken.type = TOKEN_EOF;
-        strcpy(currentToken.lexeme, "EOF");
+        token.type = TOKEN_EOF;
+        strcpy(token.lexeme, "EOF");
     }
     else if (isalpha(c) || c == '_') // Identifier
     {
-        ungetc(c, sourceFile);
-        fscanf(sourceFile, "%255[a-zA-Z0-9_]", currentToken.lexeme);
-        currentToken.type = TOKEN_ID;
+        ungetc(c, file);
+        fscanf(file, "%255[a-zA-Z0-9_]", token.lexeme);
+        token.type = TOKEN_ID; 
+
     }
     else if (isdigit(c)) // Int || Float
     {
-        ungetc(c, sourceFile);
-        fscanf(sourceFile, "%255[0-9.]", currentToken.lexeme);
-        if (strchr(currentToken.lexeme, '.'))
+        ungetc(c, file);
+        fscanf(file, "%255[0-9.]", token.lexeme);
+        if (strchr(token.lexeme, '.'))
         {
-            currentToken.type = TOKEN_FLOAT;
+            token.type = TOKEN_FLOAT;
         }
         else
         {
-            currentToken.type = TOKEN_INT;
+            token.type = TOKEN_INT;
         }
     }
     else if (ispunct(c)) {
-    if (c == '!') {
-        int nextChar = fgetc(sourceFile);
-        if (nextChar == '=') {
-            currentToken.type = TOKEN_NOT_EQUAL;
-            strcpy(currentToken.lexeme, "!=");
+        if (c == '!') {
+            int nextChar = fgetc(file);
+            if (nextChar == '=') {
+                token.type = TOKEN_NOT_EQUAL;
+                strcpy(token.lexeme, "!=");
+            } else {
+                ungetc(nextChar, file); // Put back the character
+                token.type = TOKEN_PUNCTUATION;
+                snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
+            }
         } else {
-            ungetc(nextChar, sourceFile); // Put back the character
-            currentToken.type = TOKEN_PUNCTUATION;
-            snprintf(currentToken.lexeme, sizeof(currentToken.lexeme), "%c", c);
+            token.type = TOKEN_PUNCTUATION;
+            snprintf(token.lexeme, sizeof(token.lexeme), "%c", c);
         }
-    } else {
-        currentToken.type = TOKEN_PUNCTUATION;
-        snprintf(currentToken.lexeme, sizeof(currentToken.lexeme), "%c", c);
     }
-}
-
     else // Character
     {
         switch (c)
         {
             case '+':
-                currentToken.type = TOKEN_PLUS;
+                token.type = TOKEN_PLUS;
                 break;
             case '-':
-                currentToken.type = TOKEN_MINUS;
+                token.type = TOKEN_MINUS;
                 break;
             case '*':
-                currentToken.type = TOKEN_STAR;
+                token.type = TOKEN_STAR;
                 break;
             case '/':
-                currentToken.type = TOKEN_SLASH;
+                token.type = TOKEN_SLASH;
                 break;
             case '=':
-                currentToken.type = TOKEN_ASSIGN;
+                token.type = TOKEN_ASSIGN;
                 break;
             case ';':
-                currentToken.type = TOKEN_SEMICOLON;
+                token.type = TOKEN_SEMICOLON;
                 break;
             case '(':
-                currentToken.type = TOKEN_LPAREN;
+                token.type = TOKEN_LPAREN;
                 break;
             case ')':
-                currentToken.type = TOKEN_RPAREN;
+                token.type = TOKEN_RPAREN;
                 break;
             default:
-                currentToken.type = TOKEN_EOF;
-                strcpy(currentToken.lexeme, "Unknown");
+                token.type = TOKEN_EOF;
+                strcpy(token.lexeme, "Unknown");
         }
     }
-    return currentToken;
+    return token;
 }
 
-void cleanupLexer()
+TokenListNode* addToken(TokenListNode* parent, TokenListNode* node)
 {
-    fclose(sourceFile);
+    if (parent == NULL)
+    {
+        return NULL;
+    }
+    else if (node == NULL)
+    {
+        return parent;
+    }
+
+    TokenListNode* currentNode = parent;
+    while (currentNode->next != NULL)
+    {
+        currentNode = currentNode->next;
+    }
+
+    currentNode->next = node;
+    
+    return node;
+}
+
+TokenListNode* createTokenListNode(Token token)
+{
+    TokenListNode* tokenNode = (TokenListNode*)malloc(sizeof(TokenListNode));
+    if (tokenNode == NULL)
+    {
+        fprintf(stderr, "Error: Failed to allocate memory for TokenListNode\n");
+        exit(EXIT_FAILURE);
+    }
+
+    tokenNode->token = token;
+    tokenNode->next = NULL;
+
+    return tokenNode;
+}
+
+void deleteTokenList(TokenListNode* root)
+{
+    if (root == NULL)
+    {
+        return;
+    }
+
+    deleteTokenList(root->next);
+    root->next = NULL;
+
+    free(root);
+}
+
+TokenListNode* tokenize(FILE* file)
+{   
+    Token program;
+    program.type = TOKEN_PROGRAM;
+    strcpy(program.lexeme, "Program");
+
+    TokenListNode* root = createTokenListNode(program);
+
+    Token token;
+    TokenListNode* currentNode = root;
+    do 
+    {
+        token = getNextToken(file);
+        currentNode = addToken(currentNode, createTokenListNode(token));
+        
+    } while (token.type != TOKEN_EOF);
+
+    return root;
 }

@@ -5,11 +5,9 @@
 
 // Local
 #include "include/jaclx.h"
-#include "include/jacp.h"
 
 // Test functions
-void testLexer(FILE* file);
-void testParser(FILE* file);
+void tester(FILE* file);
 
 int main(int argc, char* argv[])
 {   
@@ -28,45 +26,28 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    testParser(file);
+    tester(file);
 
     fclose(file);    
     return EXIT_SUCCESS;
 }
 
-void testLexer(FILE* file)
+void tester(FILE* file)
 {
-    initializeLexer(file);
+    TokenListNode* tokenList = tokenize(file);
 
-    Token token;
-    do 
+    if (tokenList == NULL)
     {
-        token = getNextToken();
-        printf("Token: Type=%d, lexeme='%s\n", token.type, token.lexeme);
-    } while (token.type != TOKEN_EOF);
-
-    cleanupLexer();
-    fclose(file);
-
-}
-
-void testParser(FILE* file)
-{
-    initializeLexer(file);
-
-    AstNode* syntaxTree = parse();
-
-    if (syntaxTree != NULL)
-    {
-        printf("\nParser: Syntax Tree Structure:\n");
-        displayAST(syntaxTree, 0);
-
-        deleteAST(syntaxTree);
-    }
-    else
-    {
-        fprintf(stderr, "Parser: Parsing failed\n");
+        return;
     }
 
-    cleanupLexer();
+    TokenListNode* currentNode = tokenList;
+    while(currentNode->next != NULL)
+    {
+        Token token = currentNode->token;
+        printf("Token: Type=%d, lexeme='%s'\n", token.type, token.lexeme);
+        currentNode = currentNode->next;
+    }
+
+    deleteTokenList(tokenList);
 }
