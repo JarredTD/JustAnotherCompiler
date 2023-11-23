@@ -56,7 +56,7 @@ Token getNextToken(FILE* file)
     if (c == EOF) // End of file
     {
         token.type = TOKEN_EOF;
-        strcpy(token.lexeme, "EOF");
+        strncpy(token.lexeme, "EOF", sizeof(token.lexeme) - 1);
     }
     else if (isalpha(c) || c == '_') // Identifier
     {
@@ -140,7 +140,7 @@ Token getNextToken(FILE* file)
                 int nextChar = fgetc(file);
                 if (nextChar == '=') {
                     token.type = TOKEN_NOT_EQUAL;
-                    strcpy(token.lexeme, "!=");
+                    strncpy(token.lexeme, "!=", sizeof(token.lexeme) - 1);
                 } else {
                     ungetc(nextChar, file); // Put back the character
                     token.type = TOKEN_PUNCTUATION;
@@ -206,7 +206,7 @@ Token getNextToken(FILE* file)
         {
             default:
                 token.type = TOKEN_EOF;
-                strcpy(token.lexeme, "Unknown");
+                strncpy(token.lexeme, "Unknown", sizeof(token.lexeme) - 1);
         }
     }
     return token;
@@ -266,7 +266,7 @@ TokenListNode* tokenize(FILE* file)
 {   
     Token program;
     program.type = TOKEN_PROGRAM;
-    strcpy(program.lexeme, "Program");
+    strncpy(program.lexeme, "Program", sizeof(program.lexeme) - 1);
 
     TokenListNode* root = createTokenListNode(program);
 
